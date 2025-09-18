@@ -1,10 +1,12 @@
 # python-service/app.py
 from flask import Flask, request, send_file
-from rembg import remove
+from rembg import remove, new_session
 from PIL import Image
 import io
 
 app = Flask(__name__)
+# Use lightweight model to reduce memory/CPU usage on Railway
+SESSION = new_session('u2netp')
 
 @app.route('/remove-bg', methods=['POST'])
 def remove_background():
@@ -30,8 +32,8 @@ def remove_background():
         input_image.save(input_bytes, format=input_image.format or 'PNG')
         input_bytes.seek(0)
 
-        # Remove the background
-        output_bytes = remove(input_bytes.read())
+        # Remove the background using preloaded lightweight model
+        output_bytes = remove(input_bytes.read(), session=SESSION)
 
         # Send the processed image back
         return send_file(

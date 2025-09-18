@@ -32,6 +32,10 @@ exports.removeBackground = async (req, res) => {
     const response = await axios.post(pythonServiceUrl, formData, {
       headers: formData.getHeaders(),
       responseType: 'arraybuffer',
+      timeout: 120000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      validateStatus: s => s >= 200 && s < 300
     });
 
     // Upload the background-removed image to Cloudinary

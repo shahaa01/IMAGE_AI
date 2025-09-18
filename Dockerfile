@@ -26,7 +26,13 @@ RUN npm ci --omit=dev || npm install --production \
 # ------------------------------
 WORKDIR /app
 COPY python-service/requirements.txt ./image_AI/python-service/requirements.txt
-RUN python3 -m pip install --no-cache-dir -r image_AI/python-service/requirements.txt
+RUN python3 -m pip install --no-cache-dir -r image_AI/python-service/requirements.txt \
+  && python3 - <<'PY'
+from rembg import new_session
+print('Prewarming rembg model...')
+new_session('u2netp')
+print('Model prewarmed')
+PY
 
 # Ensure Node can resolve modules from anywhere (utils requires cloudinary from /app)
 ENV NODE_PATH=/app/node_modules:/app/image_AI/backend/node_modules
