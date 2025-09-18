@@ -9,7 +9,7 @@ exports.removeBackground = async (req, res) => {
     return res.status(400).send('No image file provided.');
   }
 
-  const pythonServiceUrl = process.env.PYTHON_BG_REMOVER_URL;
+  const pythonServiceUrl = (process.env.PYTHON_BG_REMOVER_URL || 'http://127.0.0.1:5001/remove-bg').replace('localhost', '127.0.0.1');
 
   try {
     const formData = new FormData();
