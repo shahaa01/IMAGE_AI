@@ -1,3 +1,4 @@
 rembg
 flask
 pillow
+onnxruntime==1.16.3

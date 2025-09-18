@@ -4,7 +4,7 @@ FROM node:18-bullseye-slim
 
 # Install Python 3 and pip (needed for Flask + rembg)
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 python3-pip \
+  && apt-get install -y --no-install-recommends python3 python3-pip libgomp1 \
   && rm -rf /var/lib/apt/lists/*
 
 # Install PM2 for managing multiple processes
@@ -15,8 +15,8 @@ WORKDIR /app
 # ------------------------------
 # Install Node (backend) deps first for better layer caching
 # ------------------------------
-COPY backend/package*.json ./backend/
-WORKDIR /app/backend
+COPY backend/package*.json ./image_AI/backend/
+WORKDIR /app/image_AI/backend
 # Prefer npm ci if lockfile exists; fallback to npm install
 RUN npm ci --omit=dev || npm install --production \
   && npm install --no-save dotenv ejs
@@ -25,24 +25,26 @@ RUN npm ci --omit=dev || npm install --production \
 # Install Python deps
 # ------------------------------
 WORKDIR /app
-COPY python-service/requirements.txt ./python-service/requirements.txt
-RUN python3 -m pip install --no-cache-dir -r python-service/requirements.txt
+COPY python-service/requirements.txt ./image_AI/python-service/requirements.txt
+RUN python3 -m pip install --no-cache-dir -r image_AI/python-service/requirements.txt
 
 # ------------------------------
 # Copy application source
 # ------------------------------
-COPY . .
+COPY . ./image_AI
+# Provide utils at /app/utils to satisfy '../../../utils/cloudinary' require path
+COPY utils ./utils
 COPY ecosystem.config.js ./ecosystem.config.js
 
 # Default env (Railway will override as needed)
 ENV IMAGE_AI_PORT=3000
-ENV PYTHON_BG_REMOVER_URL=http://localhost:5001/remove-bg
+ENV PYTHON_BG_REMOVER_URL=http://127.0.0.1:5001/remove-bg
 
 # Expose Node backend port
 EXPOSE 3000
 
 # Optional container-level healthcheck (no app code change required)
-HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD node -e "require('http').get('http://localhost:3000/', r=>{process.exit(r.statusCode===200?0:1)}).on('error', ()=>process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/3000 && echo ok >&3 && exec 3<&- && exec 3>&-'
 
 # Start both Node and Python with PM2 runtime
 CMD ["pm2-runtime", "start", "ecosystem.config.js"]
