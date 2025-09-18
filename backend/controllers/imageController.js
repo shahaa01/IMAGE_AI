@@ -9,17 +9,24 @@ exports.removeBackground = async (req, res) => {
     return res.status(400).send('No image file provided.');
   }
 
-  const imagePath = req.file.path; // For Cloudinary storage this is a URL; for buffer we fallback
   const pythonServiceUrl = process.env.PYTHON_BG_REMOVER_URL;
 
   try {
     const formData = new FormData();
-    // If imagePath is a Cloudinary URL, fetch the bytes first
-    if (/^https?:\/\//.test(imagePath)) {
-      const imgResp = await axios.get(imagePath, { responseType: 'arraybuffer' });
+    // Prefer in-memory upload from Velvra proxy
+    if (req.file && req.file.buffer) {
+      formData.append('image', req.file.buffer, 'image.png');
+    } else if (req.file && req.file.path && /^https?:\/\//.test(req.file.path)) {
+      // Fallback: fetch Cloudinary URL if provided
+      const imgResp = await axios.get(req.file.path, { responseType: 'arraybuffer' });
+      formData.append('image', Buffer.from(imgResp.data), 'image.png');
+    } else if (req.file && req.file.path) {
+      formData.append('image', fs.createReadStream(req.file.path));
+    } else if (req.body.originalUrl && /^https?:\/\//.test(req.body.originalUrl)) {
+      const imgResp = await axios.get(req.body.originalUrl, { responseType: 'arraybuffer' });
       formData.append('image', Buffer.from(imgResp.data), 'image.png');
     } else {
-      formData.append('image', fs.createReadStream(imagePath));
+      return res.status(400).send('No image file provided.');
     }
 
     const response = await axios.post(pythonServiceUrl, formData, {

@@ -11,6 +11,8 @@ const router = express.Router();
 const storage = getCloudinaryStorage('image_ai');
 const upload = multer({ storage });
 const uploadEdit = multer({ storage });
+// Use memory storage for remove-bg so we can forward bytes to Python directly
+const memUpload = multer({ storage: multer.memoryStorage() });
 
 // POST /images/upload (multiple images) -> return Cloudinary URLs
 router.post('/upload', upload.array('images', 7), (req, res) => {
@@ -22,7 +24,7 @@ router.post('/upload', upload.array('images', 7), (req, res) => {
 });
 
 // POST /images/remove-bg (single image)
-router.post('/remove-bg', upload.single('image'), removeBackground);
+router.post('/remove-bg', memUpload.single('image'), removeBackground);
 
 // POST /images/delete (delete original and bg-removed from Cloudinary)
 router.post('/delete', deleteImages);
