@@ -32,7 +32,6 @@ RUN python3 -m pip install --no-cache-dir -r python-service/requirements.txt
 # Copy application source
 # ------------------------------
 COPY . .
-COPY ../utils ./utils
 COPY ecosystem.config.js ./ecosystem.config.js
 
 # Default env (Railway will override as needed)
