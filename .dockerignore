@@ -27,7 +27,6 @@ Thumbs.db
 .env.*
 
 # Not needed in the image
-frontend/
 **/public/js/**/*.map
 
 # Python caches
