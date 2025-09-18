@@ -28,6 +28,10 @@ WORKDIR /app
 COPY python-service/requirements.txt ./image_AI/python-service/requirements.txt
 RUN python3 -m pip install --no-cache-dir -r image_AI/python-service/requirements.txt
 
+# Ensure Node can resolve modules from anywhere (utils requires cloudinary from /app)
+ENV NODE_PATH=/app/node_modules:/app/image_AI/backend/node_modules
+RUN ln -sf /app/image_AI/backend/node_modules /app/node_modules
+
 # ------------------------------
 # Copy application source
 # ------------------------------
